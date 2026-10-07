@@ -8,6 +8,13 @@
       "when": 1791383670006,
       "tag": "0000_tiny_lorna_dane",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791386932819,
+      "tag": "0001_perpetual_jackpot",
+      "breakpoints": true
     }
   ]
 }
