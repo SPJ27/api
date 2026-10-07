@@ -10,7 +10,7 @@ export const user = pgTable("user", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
-    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .$onUpdate(() => new Date())
     .notNull(),
 });
 
@@ -22,7 +22,7 @@ export const session = pgTable(
     token: text("token").notNull().unique(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
-      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .$onUpdate(() => new Date())
       .notNull(),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
@@ -51,7 +51,7 @@ export const account = pgTable(
     password: text("password"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
-      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .$onUpdate(() => new Date())
       .notNull(),
   },
   (table) => [index("account_userId_idx").on(table.userId)],
@@ -67,17 +67,40 @@ export const verification = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
-      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .$onUpdate(() => new Date())
       .notNull(),
   },
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
-// export const 
+export const apiKeys = pgTable(
+  "apiKeys",
+  {
+    id: text("id").primaryKey(),
+    token: text("token").notNull().unique(),
+    title: text("title"),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    expiresAt: timestamp("expires_at").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    lastUsedAt: timestamp("last_used_at"),
+    revokedAt: timestamp("revoked_at"),
+  },
+  (table) => [index("apiKeys_createdBy_idx").on(table.createdBy)],
+);
+
+export const allowedGithubAccounts = pgTable("allowed_github_accounts", {
+  id: text("id").primaryKey(),
+  githubId: text("github_id").notNull().unique(),
+  githubUsername: text("github_username").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
 
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
   accounts: many(account),
+  apiKeys: many(apiKeys),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -90,6 +113,13 @@ export const sessionRelations = relations(session, ({ one }) => ({
 export const accountRelations = relations(account, ({ one }) => ({
   user: one(user, {
     fields: [account.userId],
+    references: [user.id],
+  }),
+}));
+
+export const apiKeyRelations = relations(apiKeys, ({ one }) => ({
+  creator: one(user, {
+    fields: [apiKeys.createdBy],
     references: [user.id],
   }),
 }));
