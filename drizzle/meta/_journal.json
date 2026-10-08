@@ -15,6 +15,13 @@
       "when": 1791386932819,
       "tag": "0001_perpetual_jackpot",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791389222852,
+      "tag": "0002_deep_sebastian_shaw",
+      "breakpoints": true
     }
   ]
 }
