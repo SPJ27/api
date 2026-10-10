@@ -17,7 +17,7 @@ export async function verifyApiKey(request: NextRequest) {
     if (!data.valid) {
         return {success: false, error: "API key is invalid"};
     }
-    if (data.expiresAt && new Date(data.expiresAt) < new Date()) {
+    if (data?.key?.expiresAt && new Date(data.key.expiresAt) < new Date()) {
         return {success: false, error: "API key is expired"};
     }
     return {success: true, data};

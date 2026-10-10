@@ -2,10 +2,17 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { generateApiKey } from "@/actions/apiKey";
-import { MdLogout, MdAdd, MdContentCopy, MdCheck, MdClose } from "react-icons/md";
+import {
+  MdLogout,
+  MdAdd,
+  MdContentCopy,
+  MdCheck,
+  MdClose,
+} from "react-icons/md";
 import { FiKey } from "react-icons/fi";
 import LoginPage from "@/components/LoginPage";
-
+import { FaTrash } from "react-icons/fa";
+import { useRouter } from "next/navigation";
 type ApiKeyItem = {
   id: string;
   name?: string | null;
@@ -34,7 +41,10 @@ const formatDate = (d?: string | Date | null) =>
 
 const getExpiryStatus = (expiresAt?: string | Date | null) => {
   if (!expiresAt) {
-    return { label: "Never expires", className: "bg-neutral-100 text-neutral-600" };
+    return {
+      label: "Never expires",
+      className: "bg-neutral-100 text-neutral-600",
+    };
   }
   const msLeft = new Date(expiresAt).getTime() - Date.now();
   const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
@@ -47,9 +57,11 @@ const getExpiryStatus = (expiresAt?: string | Date | null) => {
       className: "bg-amber-50 text-amber-700",
     };
   }
-  return { label: `Expires in ${daysLeft} days`, className: "bg-emerald-50 text-emerald-700" };
+  return {
+    label: `Expires in ${daysLeft} days`,
+    className: "bg-emerald-50 text-emerald-700",
+  };
 };
-
 
 type CreateKeyDialogProps = {
   open: boolean;
@@ -74,7 +86,8 @@ const CreateKeyDialog = ({ open, onClose, onCreate }: CreateKeyDialogProps) => {
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && !submitting && onClose();
+    const onKey = (e: KeyboardEvent) =>
+      e.key === "Escape" && !submitting && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, submitting, onClose]);
@@ -83,7 +96,10 @@ const CreateKeyDialog = ({ open, onClose, onCreate }: CreateKeyDialogProps) => {
 
   const customDays = custom ? parseInt(custom, 10) : null;
   const effectiveDays = customDays ?? days;
-  const valid = name.trim().length > 0 && Number.isFinite(effectiveDays) && effectiveDays > 0;
+  const valid =
+    name.trim().length > 0 &&
+    Number.isFinite(effectiveDays) &&
+    effectiveDays > 0;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,7 +112,9 @@ const CreateKeyDialog = ({ open, onClose, onCreate }: CreateKeyDialogProps) => {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
-      onMouseDown={(e) => e.target === e.currentTarget && !submitting && onClose()}
+      onMouseDown={(e) =>
+        e.target === e.currentTarget && !submitting && onClose()
+      }
     >
       <form
         onSubmit={submit}
@@ -107,7 +125,10 @@ const CreateKeyDialog = ({ open, onClose, onCreate }: CreateKeyDialogProps) => {
       >
         <div className="flex items-start justify-between">
           <div>
-            <h2 id="create-key-title" className="text-xl font-light text-neutral-900">
+            <h2
+              id="create-key-title"
+              className="text-xl font-light text-neutral-900"
+            >
               Create API key
             </h2>
             <p className="text-sm font-extralight text-neutral-500 mt-0.5">
@@ -126,7 +147,10 @@ const CreateKeyDialog = ({ open, onClose, onCreate }: CreateKeyDialogProps) => {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="key-name" className="text-sm font-light text-neutral-900">
+          <label
+            htmlFor="key-name"
+            className="text-sm font-light text-neutral-900"
+          >
             Key name
           </label>
           <input
@@ -141,7 +165,9 @@ const CreateKeyDialog = ({ open, onClose, onCreate }: CreateKeyDialogProps) => {
         </div>
 
         <div className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-neutral-700">Expires in</span>
+          <span className="text-sm font-medium text-neutral-700">
+            Expires in
+          </span>
           <div className="flex flex-wrap gap-2">
             {EXPIRY_PRESETS.map((p) => {
               const active = !custom && days === p.days;
@@ -200,7 +226,6 @@ const CreateKeyDialog = ({ open, onClose, onCreate }: CreateKeyDialogProps) => {
   );
 };
 
-
 const Page = () => {
   const { data: session, isPending } = authClient.useSession();
   const [apiKeys, setApiKeys] = useState<ApiKeyItem[]>([]);
@@ -216,7 +241,7 @@ const Page = () => {
     if (error) {
       setError(error.message ?? "Failed to load API keys");
     } else {
-      const list = Array.isArray(data) ? data : (data as any)?.apiKeys ?? [];
+      const list = Array.isArray(data) ? data : ((data as any)?.apiKeys ?? []);
       setApiKeys(list);
     }
     setKeysLoading(false);
@@ -249,11 +274,19 @@ const Page = () => {
       setError("Could not copy to clipboard");
     }
   };
-
+const handleDelete = async (id: string) => {
+  if (!confirm("Delete this API key? This can't be undone.")) return;
+  setError(null);
+  const { error } = await authClient.apiKey.delete({ keyId: id });
+  if (error) {
+    setError(error.message ?? "Failed to delete API key");
+    return;
+  }
+  setApiKeys((prev) => prev.filter((key) => key.id !== id));
+};
   if (isPending) return "Loading...";
   if (!session) return <LoginPage />;
-
-  return (
+  return (  
     <div className="w-full min-h-screen flex py-10 px-6 md:px-20 flex-col gap-1">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-light text-neutral-900">
@@ -319,7 +352,10 @@ const Page = () => {
         {keysLoading && (
           <>
             {[0, 1, 2].map((i) => (
-              <div key={i} className="h-[72px] rounded-lg bg-neutral-100 animate-pulse" />
+              <div
+                key={i}
+                className="h-[72px] rounded-lg bg-neutral-100 animate-pulse"
+              />
             ))}
           </>
         )}
@@ -329,7 +365,9 @@ const Page = () => {
             <div className="p-3 rounded-full bg-neutral-100 text-neutral-500">
               <FiKey size={22} />
             </div>
-            <p className="text-sm font-medium text-neutral-800">No API keys yet</p>
+            <p className="text-sm font-medium text-neutral-800">
+              No API keys yet
+            </p>
             <p className="text-sm text-neutral-500">
               Create your first key to start using the API.
             </p>
@@ -339,7 +377,8 @@ const Page = () => {
         {!keysLoading &&
           apiKeys.map((k) => {
             const status = getExpiryStatus(k.expiresAt);
-            const expired = !!k.expiresAt && new Date(k.expiresAt).getTime() <= Date.now();
+            const expired =
+              !!k.expiresAt && new Date(k.expiresAt).getTime() <= Date.now();
             return (
               <div
                 key={k.id}
@@ -350,7 +389,6 @@ const Page = () => {
                 <div className="p-2.5 rounded-md bg-neutral-50 text-neutral-600">
                   <FiKey size={18} />
                 </div>
-
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-neutral-700">
                     {k.name ?? "Unnamed"}
@@ -359,24 +397,28 @@ const Page = () => {
                     {k.start ?? k.prefix ?? ""}••••••••
                   </p>
                 </div>
-
                 <div className="hidden sm:flex flex-col items-end text-xs text-neutral-500">
                   <span>Created</span>
-                  <span className="text-neutral-700">{formatDate(k.createdAt)}</span>
+                  <span className="text-neutral-700">
+                    {formatDate(k.createdAt)}
+                  </span>
                 </div>
-
                 <div className="hidden sm:flex flex-col items-end text-xs text-neutral-500">
                   <span>Expires</span>
                   <span className="text-neutral-700">
                     {k.expiresAt ? formatDate(k.expiresAt) : "Never"}
                   </span>
                 </div>
-
                 <span
                   className={`text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap ${status.className}`}
                 >
                   {status.label}
-                </span>
+                </span>{" "}
+                <FaTrash className="text-neutral-700 cursor-pointer " 
+                onClick={
+                 () => handleDelete(k.id)
+                }
+                />
               </div>
             );
           })}
